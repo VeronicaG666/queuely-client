@@ -17,8 +17,8 @@ import ClearIcon from "@mui/icons-material/Clear";
 import axios from "axios";
 import { io } from "socket.io-client";
 
-const API = "http://localhost:5000/api";
-const SOCKET_URL = "http://localhost:5000";
+const API = "https://queuely-server.onrender.com/api";
+const SOCKET_URL = "https://queuely-server.onrender.com/";
 
 const socket = io(SOCKET_URL, { autoConnect: false });
 

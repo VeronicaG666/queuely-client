@@ -10,7 +10,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5000/api";
+const API = "https://queuely-server.onrender.com/api";
 
 function Login() {
   const [name, setName] = useState("");

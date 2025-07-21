@@ -11,7 +11,7 @@ import {
 import axios from "axios";
 import { useSearchParams } from "react-router-dom";
 
-const API = "http://localhost:5000/api";
+const API = "https://queuely-server.onrender.com/api";
 
 function JoinQueue() {
   const [searchParams] = useSearchParams();

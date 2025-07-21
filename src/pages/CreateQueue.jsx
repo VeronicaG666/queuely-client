@@ -12,7 +12,7 @@ import {
 import axios from "axios";
 import QRCode from "react-qr-code";
 
-const API = "http://localhost:5000/api";
+const API = "https://queuely-server.onrender.com/api";
 
 function CreateQueue() {
   const [title, setTitle] = useState("");
@@ -110,7 +110,7 @@ function CreateQueue() {
           <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
             <Typography variant="subtitle1">Scan to Join:</Typography>
             <QRCode
-              value={`http://localhost:5173/join?queueId=${queue.id}`}
+              value={`https://queuely-client.vercel.app/join?queueId=${queue.id}`}
               size={160}
             />
 
