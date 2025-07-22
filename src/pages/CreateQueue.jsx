@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Container,
   Typography,
@@ -11,42 +11,48 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import QRCode from "react-qr-code";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const API = "https://queuely-server.onrender.com/api";
 
 function CreateQueue() {
   const [title, setTitle] = useState("");
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [queue, setQueue] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const handleCreate = async () => {
-    if (!title || !email || !name) {
-      setError("❗ Please fill in all fields.");
+    if (!title) {
+      setError("❗ Queue title is required.");
+      return;
+    }
+
+    if (!user?.id) {
+      setError("Please login as a business before creating a queue.");
       return;
     }
 
     try {
-      // Step 1: create or verify business
-      const businessRes = await axios.post(`${API}/business/verify`, {
-        name,
-        email,
-      });
-      const business_id = businessRes.data.business.id;
-
-      // Step 2: create queue
       const res = await axios.post(`${API}/queue/create`, {
         title,
-        business_id,
+        business_id: user.id,
       });
 
-      setQueue(res.data.queue);
+      const newQueue = res.data.queue;
+      setQueue(newQueue);
       setError(null);
+
+      // Redirect to dashboard after short delay
+      setTimeout(() => {
+        navigate(`/dashboard/${newQueue.id}`);
+      }, 1500);
     } catch (err) {
       console.error(err);
-      setError("❌ Failed to create queue. Check your input or try again.");
+      setError("❌ Failed to create queue. Please try again.");
     }
   };
 
@@ -62,21 +68,6 @@ function CreateQueue() {
       </Typography>
 
       <Box my={2}>
-        <TextField
-          label="Business Name"
-          fullWidth
-          margin="normal"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <TextField
-          label="Business Email"
-          fullWidth
-          margin="normal"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
         <TextField
           label="Queue Title"
           fullWidth
@@ -114,18 +105,14 @@ function CreateQueue() {
               size={160}
             />
 
-            <Box mt={2} display="flex" gap={2}>
-              <Button variant="outlined" href={`/dashboard`}>
-                Go to Dashboard
-              </Button>
-              <Button
-                variant="outlined"
-                href={`/join?queueId=${queue.id}`}
-                target="_blank"
-              >
-                Open Join Link
-              </Button>
-            </Box>
+            <Button
+              variant="outlined"
+              href={`/join?queueId=${queue.id}`}
+              target="_blank"
+              sx={{ mt: 2 }}
+            >
+              Open Join Link
+            </Button>
           </Box>
         </Box>
       )}

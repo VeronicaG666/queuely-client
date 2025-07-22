@@ -1,11 +1,12 @@
 import { useState } from "react";
 import {
   Container,
-  Typography,
   TextField,
   Button,
+  Typography,
   Box,
   Alert,
+  Paper,
 } from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -13,64 +14,75 @@ import { useNavigate } from "react-router-dom";
 const API = "https://queuely-server.onrender.com/api";
 
 function Login() {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    if (!name || !email) {
-      setError("Please fill in both fields.");
+    if (!email || !name) {
+      setError("Both name and email are required.");
       return;
     }
 
     try {
       const res = await axios.post(`${API}/business/verify`, {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
       });
 
-      const businessId = res.data.business.id;
-
-      navigate(`/dashboard?businessId=${businessId}`);
+      const business = res.data.business;
+      localStorage.setItem("queuely_business", JSON.stringify(business));
+      setError(null);
+      navigate("/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("Business login failed.");
+      console.error("❌ Login error:", err);
+      setError("Login failed. Check your info or try again.");
     }
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Business Login
-      </Typography>
+    <Container maxWidth="sm">
+      <Box mt={6}>
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h5" gutterBottom align="center">
+            🔐 Business Login
+          </Typography>
 
-      <Box my={2}>
-        <TextField
-          label="Business Name"
-          fullWidth
-          margin="normal"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <TextField
-          label="Business Email"
-          fullWidth
-          margin="normal"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <TextField
+            label="Business Name"
+            fullWidth
+            margin="normal"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
 
-        <Button variant="contained" onClick={handleLogin}>
-          Login
-        </Button>
+          <TextField
+            label="Business Email"
+            fullWidth
+            margin="normal"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+            onClick={handleLogin}
+          >
+            Login to Dashboard
+          </Button>
+
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+        </Paper>
       </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
     </Container>
   );
 }

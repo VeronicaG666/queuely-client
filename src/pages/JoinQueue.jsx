@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -6,104 +6,102 @@ import {
   Button,
   Box,
   Alert,
-  Snackbar,
+  CircularProgress,
 } from "@mui/material";
-import axios from "axios";
 import { useSearchParams } from "react-router-dom";
+import axios from "axios";
 
 const API = "https://queuely-server.onrender.com/api";
 
 function JoinQueue() {
-  const [searchParams] = useSearchParams();
-  const [queueId, setQueueId] = useState(searchParams.get("queueId") || "");
+  const [params] = useSearchParams();
+  const queueId = params.get("queueId");
+
   const [name, setName] = useState("");
+  const [queueInfo, setQueueInfo] = useState(null);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchQueue = async () => {
+      try {
+        const res = await axios.get(`${API}/queue/${queueId}`);
+        setQueueInfo(res.data.queue);
+      } catch (err) {
+        setError("Queue not found.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (queueId) fetchQueue();
+  }, [queueId]);
 
   const handleJoin = async () => {
-    if (!queueId || !name) {
-      setError("❗ Please fill in all fields.");
+    if (!name) {
+      setError("Name is required to join the queue.");
       return;
     }
 
     try {
-      const res = await axios.post(`${API}/queue/${queueId}/join`, {
-        name,
-        notify_email: "", // Optional
-      });
-
-      if (res.status === 201) {
-        setJoined(true);
-        setError(null);
-      }
+      await axios.post(`${API}/queue/${queueId}/join`, { name });
+      setJoined(true);
+      setError(null);
     } catch (err) {
-      console.error("Join error:", err);
-
-      if (err.response?.status === 409) {
-        setError("⚠️ You’ve already joined this queue.");
-      } else if (err.response?.status === 404) {
-        setError("❌ Queue not found.");
-      } else {
-        setError("❌ Failed to join queue. Try again.");
-      }
+      console.error("❌ Join error:", err);
+      setError("Failed to join queue. Try again.");
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(queueId);
-    setCopied(true);
-  };
+  if (loading)
+    return (
+      <Container>
+        <Box mt={5} display="flex" justifyContent="center">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
 
   return (
     <Container maxWidth="sm">
-      <Typography variant="h4" gutterBottom>
-        Join a Queue
-      </Typography>
+      <Box mt={4}>
+        <Typography variant="h5" gutterBottom>
+          Join Queue
+        </Typography>
 
-      <Box my={2}>
-        <TextField
-          label="Queue ID"
-          fullWidth
-          margin="normal"
-          value={queueId}
-          onChange={(e) => setQueueId(e.target.value)}
-        />
-        <TextField
-          label="Your Name"
-          fullWidth
-          margin="normal"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Box display="flex" gap={2} mt={2}>
-          <Button variant="contained" onClick={handleJoin}>
-            Join
-          </Button>
-          <Button variant="outlined" onClick={handleCopy}>
-            Copy Queue ID
-          </Button>
-        </Box>
+        {queueInfo && (
+          <Typography variant="subtitle1" gutterBottom>
+            Queue: <strong>{queueInfo.title}</strong>
+          </Typography>
+        )}
+
+        {joined ? (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            🎉 You've joined the queue successfully!
+          </Alert>
+        ) : (
+          <Box>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Your Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <Button variant="contained" fullWidth sx={{ mt: 2 }} onClick={handleJoin}>
+              Join Queue
+            </Button>
+          </Box>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
       </Box>
-
-      {joined && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          ✅ You’ve joined the queue successfully!
-        </Alert>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Snackbar
-        open={copied}
-        autoHideDuration={3000}
-        onClose={() => setCopied(false)}
-        message="📋 Queue ID copied to clipboard!"
-      />
     </Container>
   );
 }
